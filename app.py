@@ -282,6 +282,11 @@ if submit_button:
 st.divider()
 
 st.header("📊 Dashboard")
+# ---------------------------
+# Dashboard Today Filter
+# ---------------------------
+
+df_today = pd.DataFrame()
 
 if not df_history.empty and "Timestamp" in df_history.columns:
 
@@ -296,9 +301,6 @@ if not df_history.empty and "Timestamp" in df_history.columns:
     df_today = df_history[
         df_history["Timestamp"].dt.date == today
     ]
-
-else:
-    df_today = pd.DataFrame()
 
     c1, c2, c3, c4 = st.columns(4)
 
