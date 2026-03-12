@@ -30,6 +30,7 @@ try:
         spreadsheet=SHEET_URL,
         worksheet="Sheet1",
         ttl=0
+        dtype=False
     )
 except Exception as e:
     st.error(f"เชื่อม Google Sheets ไม่ได้: {e}")
