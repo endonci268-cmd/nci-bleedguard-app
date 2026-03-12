@@ -46,7 +46,7 @@ def get_next_id(df):
     if df.empty or "Case_ID" not in df.columns:
         return f"{prefix}1"
 
-    ids = df["Case_ID"].str.extract(r'Endonci-(\d+)').dropna()
+    ids = df["Case_ID"].astype(str).str.extract(r'Endonci-(\d+)').dropna()
 
     if ids.empty:
         return f"{prefix}1"
@@ -283,17 +283,23 @@ st.divider()
 
 st.header("📊 Dashboard")
 
-if not df_history.empty:
+if not df_history.empty and "Timestamp" in df_history.columns:
 
     df_history["Timestamp"] = pd.to_datetime(
-        df_history["Timestamp"]
-    )
+        df_history["Timestamp"],
+        errors="coerce",
+        utc=True
+    ).dt.tz_convert("Asia/Bangkok")
 
     today = datetime.now(bkk_tz).date()
 
     df_today = df_history[
         df_history["Timestamp"].dt.date == today
     ]
+
+else:
+
+    df_today = pd.DataFrame()
 
     c1, c2, c3, c4 = st.columns(4)
 
