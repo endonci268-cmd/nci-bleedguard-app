@@ -4,3 +4,5 @@ numpy
 pytz
 plotly
 streamlit-gsheets
+scikit-learn
+joblib
