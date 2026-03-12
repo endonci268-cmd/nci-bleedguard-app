@@ -1,6 +1,6 @@
 streamlit
 pandas
 numpy
-st-gsheets-connection
 pytz
 plotly
+streamlit-gsheets
