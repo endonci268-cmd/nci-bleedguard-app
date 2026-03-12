@@ -24,7 +24,7 @@ bkk_tz = pytz.timezone("Asia/Bangkok")
 
 from streamlit_gsheets import GSheetsConnection
 
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1RRXOhnjmnRG_6ynHkrd2iXmQYVTqN96CjmCXnuZNA9w"
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1RRXOhnjmnRG_6ynHkrd2iXmQYVTqN96CjmCXnuZNA9w/edit?usp=sharing"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 try:
