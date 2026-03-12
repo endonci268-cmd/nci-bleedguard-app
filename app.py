@@ -29,7 +29,7 @@ try:
     df_history = conn.read(
         spreadsheet=SHEET_URL,
         worksheet="Sheet1",
-        ttl=0
+        ttl=0,
         dtype=False
     )
 except Exception as e:
