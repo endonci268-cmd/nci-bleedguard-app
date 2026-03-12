@@ -298,7 +298,6 @@ if not df_history.empty and "Timestamp" in df_history.columns:
     ]
 
 else:
-
     df_today = pd.DataFrame()
 
     c1, c2, c3, c4 = st.columns(4)
