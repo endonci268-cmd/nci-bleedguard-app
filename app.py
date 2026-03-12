@@ -13,7 +13,7 @@ st.set_page_config(page_title="NCI BleedGuard Dashboard", page_icon="🛡️", l
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
 except Exception as e:
-    st.error("⚠️ ไม่สามารถเชื่อมต่อ Google Sheets ได้ กรุณาเช็ก Secrets")
+    st.error("⚠️ ไม่สามารถเชื่อมต่อ Google Sheets ได้ กรุณาเช็ก Secrets ใน Streamlit Cloud")
 
 # --- 3. ส่วนหัวของแอป ---
 st.title("🛡️ NCI BleedGuard-AI: Smart Dashboard")
@@ -46,7 +46,7 @@ with st.expander("➕ เพิ่มข้อมูลผู้ป่วยร�
 
 # --- 5. การประมวลผลโมเดล ---
 if submit_button:
-    # ค่า Intercept และ Coefficients ของคุณพยาบาล
+    # ค่า Intercept และ Coefficients จากผลวิเคราะห์ Logistic Regression
     intercept = -3.26419367
     emr_v = 1 if procedure == "EMR" else 0
     med_v = 1 if medication == "ใช่" else 0
@@ -59,6 +59,7 @@ if submit_button:
     sex_v = 1 if sex == "ชาย" else 0
     bx_v = 1 if bx == "ใช่" else 0
 
+    # คำนวณค่า z ตามสมการ Logistic Regression
     z = intercept + (3.2052 * emr_v) + (1.7408 * size) + (1.0052 * med_v) + \
         (0.6243 * rad_v) + (0.5988 * loc_v) + (0.4511 * cold_v) + \
         (0.3931 * hot_v) + (0.2509 * sur_v) + (0.2030 * che_v) + \
@@ -66,21 +67,25 @@ if submit_button:
     
     score = 1 / (1 + np.exp(-z))
     
-    # กำหนด Risk Level
+    # กำหนดระดับความเสี่ยง (Triage)
     if score >= 0.40:
-        risk, advice = "RED", "📞 โทรติดตาม 24, 48, 72 ชม."
+        risk, advice = "RED", "📞 โทรติดตาม 24, 48, 72 ชม. และเน้นย้ำสัญญาณเลือดออก"
     elif score >= 0.11:
         risk, advice = "YELLOW", "📞 โทรติดตาม 24, 48 ชม."
     else:
-        risk, advice = "GREEN", "✅ ให้คู่มือสังเกตอาการ / Add LINE"
+        risk, advice = "GREEN", "✅ ให้คู่มือสังเกตอาการ / Add LINE ศูนย์ส่องกล้อง"
 
+    # แสดงผลลัพธ์บนหน้าจอ
     st.subheader(f"ผลประเมิน HN: {case_id}")
-    if risk == "RED": st.error(f"ระดับความเสี่ยง: {risk} (Score: {score:.4f})")
-    elif risk == "YELLOW": st.warning(f"ระดับความเสี่ยง: {risk} (Score: {score:.4f})")
-    else: st.success(f"ระดับความเสี่ยง: {risk} (Score: {score:.4f})")
-    st.info(f"📋 คำแนะนำ: {advice}")
+    if risk == "RED": 
+        st.error(f"ระดับความเสี่ยง: {risk} (Score: {score:.4f})")
+    elif risk == "YELLOW": 
+        st.warning(f"ระดับความเสี่ยง: {risk} (Score: {score:.4f})")
+    else: 
+        st.success(f"ระดับความเสี่ยง: {risk} (Score: {score:.4f})")
+    st.info(f"📋 คำแนะนำพยาบาล: {advice}")
 
-    # บันทึกข้อมูล (Timezone กรุงเทพ)
+    # บันทึกข้อมูลลง Google Sheets (Timezone กรุงเทพ)
     bkk_tz = pytz.timezone('Asia/Bangkok')
     new_entry = pd.DataFrame([{
         "Timestamp": datetime.now(bkk_tz).strftime("%Y-%m-%d %H:%M:%S"),
@@ -92,40 +97,42 @@ if submit_button:
     }])
     
     try:
+        # อ่านข้อมูลเดิมและเขียนทับพร้อมข้อมูลใหม่
         df_existing = conn.read(worksheet="Sheet1")
         df_updated = pd.concat([df_existing, new_entry], ignore_index=True)
         conn.update(worksheet="Sheet1", data=df_updated)
-        st.toast("✅ บันทึกข้อมูลลง Google Sheets เรียบร้อย")
-    except:
-        st.error("บันทึกข้อมูลไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ Sheets")
+        st.toast("✅ บันทึกข้อมูลลงฐานข้อมูลเรียบร้อยแล้ว")
+    except Exception as e:
+        st.error(f"⚠️ บันทึกข้อมูลไม่สำเร็จ: {e}")
 
 # --- 6. ส่วน Dashboard (Data Visualization) ---
 st.divider()
 st.header("📊 สรุปสถิติความเสี่ยงรวม")
 
 try:
+    # ดึงข้อมูลมาสร้างกราฟ
     df_history = conn.read(worksheet="Sheet1")
     if not df_history.empty:
-        # สรุปตัวเลข (Top Metrics)
+        # แสดงตัวเลขสรุป (Metrics)
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("เคสทั้งหมด", len(df_history))
         m2.metric("เสี่ยงสูง (RED)", len(df_history[df_history['Risk_Level'] == 'RED']))
         m3.metric("ปานกลาง (YELLOW)", len(df_history[df_history['Risk_Level'] == 'YELLOW']))
         m4.metric("ต่ำ (GREEN)", len(df_history[df_history['Risk_Level'] == 'GREEN']))
 
-        # กราฟ
+        # แสดงกราฟสัดส่วน
         g1, g2 = st.columns(2)
         with g1:
-            fig1 = px.pie(df_history, names='Risk_Level', title="สัดส่วนความเสี่ยงผู้ป่วย",
+            fig1 = px.pie(df_history, names='Risk_Level', title="สัดส่วนความเสี่ยงผู้ป่วยภาพรวม",
                           color='Risk_Level', color_discrete_map={'RED':'#FF4B4B', 'YELLOW':'#FFA500', 'GREEN':'#28A745'})
             st.plotly_chart(fig1, use_container_width=True)
         with g2:
             fig2 = px.histogram(df_history, x='Risk_Level', color='Sex', barmode='group', title="ความเสี่ยงแยกตามเพศ")
             st.plotly_chart(fig2, use_container_width=True)
 
-        st.subheader("📋 รายการข้อมูลล่าสุด")
+        st.subheader("📋 รายการข้อมูล 10 รายล่าสุด")
         st.dataframe(df_history.tail(10), use_container_width=True)
     else:
-        st.info("ยังไม่มีข้อมูลเพื่อแสดงผล Dashboard")
+        st.info("ยังไม่มีข้อมูลในระบบ เพื่อใช้สร้าง Dashboard")
 except:
-    st.write("รอข้อมูลเพื่อสร้าง Dashboard...")
+    st.write("ระบบกำลังเตรียมข้อมูลสำหรับ Dashboard...")
