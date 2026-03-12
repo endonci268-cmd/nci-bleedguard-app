@@ -27,7 +27,6 @@ from streamlit_gsheets import GSheetsConnection
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1RRXOhnjmnRG_6ynHkrd2iXmQYVTqN96CjmCXnuZNA9w"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
-
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -40,7 +39,7 @@ try:
 
 except Exception as e:
     st.error(f"เชื่อม Google Sheets ไม่ได้: {e}")
-    df_history = pd.DataFrame()DataFrame()
+    df_history = pd.DataFrame()
 
 # ---------------------------
 # 3 สร้าง Case ID อัตโนมัติ
