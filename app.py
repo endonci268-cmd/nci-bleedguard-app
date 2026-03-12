@@ -28,15 +28,19 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/1RRXOhnjmnRG_6ynHkrd2iXmQYVT
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-df_history = conn.read(
-    spreadsheet=SHEET_URL,
-    worksheet="Sheet1",
-    ttl=0,
-    dtype=False
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+
+    df_history = conn.read(
+        spreadsheet=SHEET_URL,
+        worksheet="Sheet1",
+        ttl=0,
+        dtype=False
     )
+
 except Exception as e:
     st.error(f"เชื่อม Google Sheets ไม่ได้: {e}")
-    df_history = pd.DataFrame()
+    df_history = pd.DataFrame()DataFrame()
 
 # ---------------------------
 # 3 สร้าง Case ID อัตโนมัติ
